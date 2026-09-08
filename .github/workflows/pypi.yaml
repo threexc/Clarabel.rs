@@ -67,11 +67,14 @@ jobs:
       - name: Generate Cargo.lock
         run: cargo generate-lockfile
         
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
+          activate-environment: true
           python-version: ${{ env.PYTHON_VERSION }}
-          architecture: ${{ matrix.os == 'windows' && matrix.arch || '' }}
-                    
+
+      - name: Ensure pip is available in venv
+        run: uv pip install pip
+
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -84,8 +87,8 @@ jobs:
         if: matrix.test
         shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install dist/${{ env.PACKAGE_NAME }}-*.whl --force-reinstall
+          uv pip install --upgrade pip
+          uv pip install dist/${{ env.PACKAGE_NAME }}-*.whl --force-reinstall
           python -c "import clarabel"
           python examples/python/example_qp.py 
           python examples/python/example_sdp.py 
@@ -100,9 +103,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
+          activate-environment: true
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Ensure pip is available in venv
+        run: uv pip install pip
 
       - name: Build sdist
         uses: PyO3/maturin-action@v1
@@ -113,7 +120,7 @@ jobs:
 
       - name: Test sdist
         run: |
-          pip install --force-reinstall --verbose dist/*.tar.gz
+          uv pip install --force-reinstall --verbose dist/*.tar.gz
           python -c 'import clarabel'
           
       - name: Upload sdist
@@ -140,13 +147,14 @@ jobs:
         with:
           name: sdist
           path: dist
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
+          activate-environment: true
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Publish to PyPi
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
-          pip install --upgrade twine
+          uv pip install --upgrade twine
           twine upload --skip-existing --repository ${{ env.PYPI_TARGET  }} dist/*
