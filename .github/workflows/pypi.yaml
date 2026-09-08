@@ -15,6 +15,12 @@ env:
   PACKAGE_NAME: clarabel
   PYTHON_VERSION: "3.11" # to build abi3 wheels
   PYPI_TARGET: pypi # use "testpypi" for testing, "pypi" otherwise
+  # riscv64 wheels are often missing on PyPI; RISE mirrors prebuilt wheels for
+  # it so uv doesn't have to build them from source.  unsafe-best-match is
+  # needed so uv still falls back to PyPI for packages/versions RISE doesn't
+  # happen to carry.
+  UV_INDEX: ${{ matrix.config.os == 'ubuntu-24.04-riscv' && 'https://pypi.riseproject.dev/simple/' || '' }}
+  UV_INDEX_STRATEGY: ${{ matrix.config.os == 'ubuntu-24.04-riscv' && 'unsafe-best-match' || 'first-index' }}
 
 # NB: uncomment "if" lines below to skip compilation except on version tagging
 
@@ -37,6 +43,12 @@ jobs:
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             arch: aarch64
+            features: "python,pardiso-panua"
+            test: false
+
+          - os: ubuntu-24.04-riscv
+            target: riscv64gc-unknown-linux-gnu
+            arch: riscv64
             features: "python,pardiso-panua"
             test: false
             
